@@ -1,1 +1,136 @@
+# from random import randrange
+# def create_board():
+#     board=[[str(3*i+j+1) for j in range(3)] for i in range(3)]
+#     board[1][1]='X'
+#     return board
 
+# def display_board(board):
+#     line = "+-------+-------+-------+"
+#     for row in board:
+#         print(line)
+#         print("|       " * 3 + "|")
+#         print("|  " + "  |  ".join(row) + "  |")
+#         print("|       " * 3 + "|")
+#     print(line)
+
+# def check_victory(board,sign):
+#     for i in range(3):
+#         if all(board[i][j]==sign for j in range(3)) or all(board[j][i]==sign for j in range(3)):
+#             return True
+#         if all(board[i][i] == sign for i in range(3)) or all(board[i][2 - i] == sign for i in range(3)):
+#             return True
+#     return False
+
+# def is_full(board):
+#     for row in board:
+#         for cell in row:
+#             if cell not in ['X','O']:
+#                 return False     
+#     return True
+
+# def enter_move(board):
+#     while True:
+#         try:
+#             move=int(input("Enter your move:"))
+#             if(move<1 or move>9):
+#                 print("Invalid move.Try again")
+#                 continue
+#             row=(move-1)//3
+#             col=(move-1)%3
+#             if board[row][col] in ['X','O']:
+#                 print("That square is already taken. Try again")
+#                 continue
+#             board[row][col]='O'
+#             break
+#         except ValueError:
+#             print("Please enter valid number")
+
+# def computer_move(board):
+#     free = [(i, j) for i in range(3) for j in range(3) if board[i][j] not in ['X', 'O']]
+#     if free:
+#         row, col = free[randrange(len(free))]
+#         board[row][col] = 'X'
+
+
+# def tic_tac_toe():
+#     board = create_board()
+#     display_board(board)
+#     while True:
+#         enter_move(board)
+#         display_board(board)
+#         if check_victory(board, 'O'):
+#             print("You won!")
+#             break
+#         if is_full(board):
+#             print("It's a tie!")
+#             break
+#         computer_move(board)
+#         display_board(board)
+#         if check_victory(board, 'X'):
+#             print("Computer won!")
+#             break
+#         if is_full(board):
+#             print("It's a tie!")
+#             break
+
+# tic_tac_toe()
+import streamlit as st
+from random import choice
+
+if "board" not in st.session_state:
+    st.session_state.board = ['1','2','3','4','X','6','7','8','9']
+    st.session_state.winner = None
+    st.session_state.turn = 'O' 
+
+def display_board():
+    for i in range(0, 9, 3):
+        cols = st.columns(3)
+        for j in range(3):
+            index = i + j
+            if st.session_state.board[index] in ['X', 'O']:
+                cols[j].button(st.session_state.board[index], disabled=True, key=f"cell_{index}")
+            else:
+                if cols[j].button(st.session_state.board[index]):
+                    make_move(index, 'O')
+
+def make_move(index, player):
+    if st.session_state.board[index] not in ['X', 'O'] and st.session_state.winner is None:
+        st.session_state.board[index] = player
+        if check_winner(player):
+            st.session_state.winner = f"{'You' if player == 'O' else 'Computer'} won!"
+        elif is_full():
+            st.session_state.winner = "It's a tie!"
+        elif player == 'O':
+            computer_move()
+
+def computer_move():
+    free_cells = [i for i, v in enumerate(st.session_state.board) if v not in ['X', 'O']]
+    if free_cells:
+        comp_choice = choice(free_cells)
+        make_move(comp_choice, 'X')
+
+def check_winner(sign):
+    b = st.session_state.board
+    win_positions = [
+        [0,1,2], [3,4,5], [6,7,8],  # rows
+        [0,3,6], [1,4,7], [2,5,8],  # columns
+        [0,4,8], [2,4,6]            # diagonals
+    ]
+    return any(all(b[i] == sign for i in line) for line in win_positions)
+
+def is_full():
+    return all(cell in ['X', 'O'] for cell in st.session_state.board)
+
+def reset_game():
+    st.session_state.board = ['1','2','3','4','X','6','7','8','9']
+    st.session_state.winner = None
+
+st.title("Tic-Tac-Toe Game")
+st.markdown("You're O, Computer is X. Computer starts with center move.")
+
+display_board()
+
+if st.session_state.winner:
+    st.markdown(f"### {st.session_state.winner}")
+
+st.button("Restart Game", on_click=reset_game)
